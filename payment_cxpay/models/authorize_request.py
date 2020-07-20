@@ -297,7 +297,7 @@ class CXPay():
         }
 
         response = self._authorize_request(values)
-
+        print("Sssssssssssssssssss")
         if not response.get('customerProfileId'):
             _logger.warning(
                 'Unable to create customer payment profile, data missing from transaction. Transaction_id: %s - Partner_id: %s'
@@ -322,7 +322,7 @@ class CXPay():
         }
 
         response = self._authorize_request(values)
-
+        print("??????????????????????????????????????????????????")
         res['name'] = response.get('paymentProfile', {}).get(
             'payment', {}).get('creditCard', {}).get('cardNumber')
         return res
@@ -375,19 +375,19 @@ class CXPay():
         # response = self._authorize_request(values)
         self.setLogin(token.acquirer_id.cxpay_client_key)
         response = self.doSale(str(amount), str(token.card_number), str(token.exp_date), str(token.cvv_no))
-        print("???????????????????????????????//", response)
-        _logger.info("_authorize_request: Received response:\n%s", response)
-        if response and response.get('err_code'):
+        _logger.info("_authorize_request: Received response:\n%s", response.get('response'))
+        print("Ssssssssssssssssssssssssssssssssssssssssssssssssssssssss", str(response.get('response')), str(response.get('response')) != '1')
+        if response and response.get('response') and str(response.get('response').decode('ASCII') ) != '1':
             return {
-                'x_response_code': self.AUTH_ERROR_STATUS,
-                'x_response_reason_text': response.get('err_msg')
+                'x_response_code': response.get('response'),
+                'x_response_reason_text': response.get('responsetext')
             }
         print("???????response????????????????////", )
         print("???????response????????????????////", )
         result = {
             'x_response_code': response.get('response'),
             'x_trans_id': response.get('transactionid'),
-            'x_type': 'auth_capture'
+            'x_type': 'auth_capture'                
         }
         errors = response.get('transactionResponse', {}).get('errors')
         if errors:
@@ -430,13 +430,13 @@ class CXPay():
 
             }
         }
-        print("????????????????????1111111111111111111111   ???????")
         response = self._authorize_request(values)
+        print("????????????????????1111111111111111111111   ???????")
 
-        if response and response.get('err_code'):
+        if response and response.get('response') and response.get('response') != 1:
             return {
-                'x_response_code': self.AUTH_ERROR_STATUS,
-                'x_response_reason_text': response.get('err_msg')
+                'x_response_code': response.get('response'),
+                'x_response_reason_text': response.get('responsetext')
             }
 
         return {
@@ -474,12 +474,12 @@ class CXPay():
 
         response = self._authorize_request(values)
 
-        if response and response.get('err_code'):
+        print("???????????????????????????????????????????Dddddddddddddddddddddddddddddddddddd")
+        if response and response.get('response') and response.get('response') != 1:
             return {
-                'x_response_code': self.AUTH_ERROR_STATUS,
-                'x_response_reason_text': response.get('err_msg')
+                'x_response_code': response.get('response'),
+                'x_response_reason_text': response.get('responsetext')
             }
-
         return {
             'x_response_code': response.get('transactionResponse', {}).get('responseCode'),
             'x_trans_id': response.get('transactionResponse', {}).get('transId'),
@@ -510,12 +510,12 @@ class CXPay():
 
         response = self._authorize_request(values)
 
-        if response and response.get('err_code'):
-            return {
-                'x_response_code': self.AUTH_ERROR_STATUS,
-                'x_response_reason_text': response.get('err_msg')
-            }
         print("???????????????????????????Ssssssssssssssssssssssssssss11111111")
+        if response and response.get('response') and response.get('response') != 1:
+            return {
+                'x_response_code': response.get('response'),
+                'x_response_reason_text': response.get('responsetext')
+            }
         return {
             'x_response_code': response.get('transactionResponse', {}).get('responseCode'),
             'x_trans_id': response.get('transactionResponse', {}).get('transId'),
@@ -539,6 +539,7 @@ class CXPay():
         }
 
         response = self._authorize_request(values)
+        print("Ssssssssssssssssssssssssss")
         if response and response.get('err_code'):
             return False
         return True
@@ -555,5 +556,6 @@ class CXPay():
             }
         }
         response = self._authorize_request(values)
+        print("sssssssssssssssssssssssssssssssssssssssss")
         client_secret = response.get('publicClientKey')
         return client_secret
