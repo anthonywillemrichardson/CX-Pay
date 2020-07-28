@@ -20,6 +20,7 @@ class AuthorizeController(http.Controller):
     ], type='http', auth='public', csrf=False)
     def authorize_form_feedback(self, **post):
         _logger.info('Authorize: entering form_feedback with post data %s', pprint.pformat(post))
+        print("????????????????????????sssssssssssssssssssssssssssssss")
         if post:
             request.env['payment.transaction'].sudo().form_feedback(post, 'authorize')
         base_url = request.env['ir.config_parameter'].sudo().get_param('web.base.url')

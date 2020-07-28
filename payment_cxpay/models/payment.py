@@ -61,8 +61,10 @@ class PaymentAcquirerAuthorize(models.Model):
     def _get_cxpay_urls(self, environment):
         """ Authorize URLs """
         if environment == 'prod':
+            # return {'cxpay_form_url': 'https://secure2.authorize.net/gateway/transact.dll'}
             return {'cxpay_form_url': 'https://cxpay.transactiongateway.com/gateway/transact.dll'}
         else:
+            # return {'cxpay_form_url': 'https://test.authorize.net/gateway/transact.dll'}
             return {'cxpay_form_url': 'https://cxpay.transactiongateway.com/gateway/transact.dll'}
 
     def _cxpay_generate_hashing(self, values):
@@ -316,7 +318,7 @@ class PaymentToken(models.Model):
     card_number = fields.Char(
         string='acquirer',
     )
-    exp_date = fields.Integer(
+    exp_date = fields.Char(
         string='Expiry Date',
     )
     cvv_no = fields.Char(
@@ -331,14 +333,16 @@ class PaymentToken(models.Model):
             cc_expiry = ''
             if values.get('cc_expiry'):
                 for rec in list(values.get('cc_expiry')):
+                    print("??????????????????????/////////", rec, rec.isdigit())
                     if rec.isdigit():
                         cc_expiry += str(rec)
+                        print("??????????????????????/////////cc_expiry", rec, cc_expiry)
             return {
                 'name': 'XXXXXXXXXXXX%s - %s' % (values['cc_number'][-4:], values['cc_holder_name']),
                 'acquirer_ref': 'test',
                 'verified': True,
                 'card_number': values.get('cc_number'),
-                'exp_date': cc_expiry and int(cc_expiry),
+                'exp_date': cc_expiry,
                 'cvv_no': values.get('cc_cvc'),
             }
         else:

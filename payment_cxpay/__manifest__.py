@@ -4,7 +4,7 @@
     'name': 'CX Pay Payment Acquirer',
     'category': 'Accounting/Payment',
     'summary': 'Payment Acquirer: CX pay Implementation',
-    'version': '13.0.0.1.1',
+    'version': '13.0.0.1.2',
     'description': """CX pay Payment Acquirer""",
     'depends': ['payment'],
     'data': [
