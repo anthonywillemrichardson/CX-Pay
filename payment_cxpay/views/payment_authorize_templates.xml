@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
         <template id="cxpay_form">
             <div>
                 <input type="hidden" name="data_set" t-att-data-action-url="tx_url" data-remove-me=""/>
@@ -51,7 +51,7 @@
         </template>
 
         <template id="cxpay_s2s_form">
-            <input type="hidden" name="data_set" data-create-route="/payment/authorize/s2s/create_json_3ds"/>
+            <input type="hidden" name="data_set" data-create-route="/payment/cx_pay/s2s/create_json_3ds"/>
             <div t-attf-class="row mt8 #{'' if bootstrap_formatting else 'o_card_brand_detail'}">
                 <div t-att-class="'form-group col-lg-12' if bootstrap_formatting else 'form-group'">
                     <input type="tel" name="cc_number" id="cc_number" class="form-control" placeholder="Card number" data-is-required="true"/>
