@@ -20,7 +20,6 @@ class AuthorizeController(http.Controller):
     ], type='http', auth='public', csrf=False)
     def authorize_form_feedback(self, **post):
         _logger.info('Authorize: entering form_feedback with post data %s', pprint.pformat(post))
-        print("????????????????????????sssssssssssssssssssssssssssssss")
         if post:
             request.env['payment.transaction'].sudo().form_feedback(post, 'authorize')
         base_url = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
@@ -31,20 +30,15 @@ class AuthorizeController(http.Controller):
             'return_url': urls.url_join(base_url, "/payment/process")
         })
 
-    @http.route(['/payment/ex_pay/s2s/create_json_3ds'], type='json', auth='public', csrf=False)
+    @http.route(['/payment/cx_pay/s2s/create_json_3ds'], type='json', auth='public', csrf=False)
     def authorize_s2s_create_json_3ds(self, verify_validity=False, **kwargs):
         token = False
         acquirer = request.env['payment.acquirer'].browse(int(kwargs.get('acquirer_id')))
-        print("???????????????????ssssssssssssssssssssssssssssssssssssssssss")
         try:
             if not kwargs.get('partner_id'):
                 kwargs = dict(kwargs, partner_id=request.env.user.partner_id.id)
-            print("??????????????????111111111111111111111111????kwargskwargskwargs????????/", kwargs)
             token = acquirer.s2s_process(kwargs)
-            print("???tokentokentoken?????????????????????/////", token)
         except ValidationError as e:
-            print("??????????????????????kwargskwargskwargs????????/", kwargs)
-            print("?????????????????????????????/",  e)
             message = e.args[0]
             if isinstance(message, dict) and 'missing_fields' in message:
                 if request.env.user._is_public():
@@ -56,13 +50,10 @@ class AuthorizeController(http.Controller):
                     msg = _("The transaction cannot be processed because some contact details are missing or invalid: ")
                     message = msg + ', '.join(message['missing_fields']) + '. '
                     message += _("Please complete your profile. ")
-            print("???????????ssssssssssssssssssssssssssssssssssssssss")
             return {
                 'error': message
             }
         except UserError as e:
-            print("?????????????????????????????",e)
-            5/0
             return {
                 'error': e.name,
             }
@@ -72,7 +63,6 @@ class AuthorizeController(http.Controller):
                 'result': False,
             }
             return res
-        # print("111111111111111111111111111111111111111111111111", res)
         res = {
             'result': True,
             'id': token.id,
@@ -90,7 +80,6 @@ class AuthorizeController(http.Controller):
 
     @http.route(['/payment/authorize/s2s/create'], type='http', auth='public')
     def authorize_s2s_create(self, **post):
-        print("??????????????????????/", post)
         acquirer_id = int(post.get('acquirer_id'))
         acquirer = request.env['payment.acquirer'].browse(acquirer_id)
         acquirer.s2s_process(post)
