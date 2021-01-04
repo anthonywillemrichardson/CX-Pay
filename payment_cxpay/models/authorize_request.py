@@ -2,6 +2,8 @@
 import json
 import logging
 import requests
+import json
+import xmltodict
 
 from uuid import uuid4
 
@@ -36,7 +38,6 @@ class CXPay():
 
         :param record acquirer: payment.acquirer account that will be contacted
         """
-        print("")
         if acquirer.state == 'test':
             self.url = 'https://apitest.authorize.net/xml/v1/request.api'
         else:
@@ -110,61 +111,76 @@ class CXPay():
         self.shipping['country'] = country
         self.shipping['email'] = email
 
-    def doSale(self, amount, ccnumber, ccexp, cvv=''):
-
-        query = ""
+    def doSale(self, amount, payment_id, ccnumber, ccexp, cvv=''):
+        payment_id
+        url = payment_id.env["ir.config_parameter"].sudo().get_param("web.base.url")
+        url += "/payment/cx_pay/approve"
+        query = '<?xml version="1.0" encoding="UTF-8"?><sale><api-key>'
         # Login Information
+        query += self.login['security_key'] 
+        query += "</api-key><redirect-url>"
+        query += url
+        query += "</redirect-url><amount>"
+        query += str(amount)
+        query += "</amount><currency>"
+        query += payment_id.env.user.company_id.currency_id.name
+        query += "</currency><order-id>"
+        if payment_id.sale_order_ids:
+            value = payment_id.sale_order_ids[0]
+        elif payment_id.invoice_ids:
+            value = payment_id.invoice_ids[0]
+        query += str(value.name)
+        query += "</order-id><order-description>>"
+        query += str(value.name)
+        query += "</order-description></sale>"
+        response = requests.post(
+            "https://cxpay.transactiongateway.com/api/v2/three-step",
+            headers={"Content-Type": "text/xml"},
+            data=query
+        )
+        response_dict = xmltodict.parse(response.text)
+        if response_dict['response'] and response_dict['response']['result'] == "1":
+            transaction_id = response_dict['response']['transaction-id']
+            form_url = response_dict['response']['form-url']
+            # transaction_id.
+            return self.doPost(transaction_id, form_url, ccnumber, ccexp, cvv)
 
-        query = query + "security_key=" + \
-            urllib.quote(self.login['security_key']) + "&"
-        # Sales Information
-        query += "ccnumber=" + urllib.quote(ccnumber) + "&"
-        query += "ccexp=" + urllib.quote(ccexp) + "&"
-        query += "amount=" + \
-            urllib.quote('{0:.2f}'.format(float(amount))) + "&"
-        if (cvv != ''):
-            query += "cvv=" + urllib.quote(cvv) + "&"
-        # Order Information
-        for key, value in self.order.items():
-            query += key + "=" + urllib.quote(str(value)) + "&"
-
-        # Billing Information
-        for key, value in self.billing.items():
-            query += key + "=" + urllib.quote(str(value)) + "&"
-
-        # Shipping Information
-        for key, value in self.shipping.items():
-            query += key + "=" + urllib.quote(str(value)) + "&"
-
-        query += "type=sale"
-        return self.doPost(query)
-
-    def doPost(self, query):
-        responseIO = io.BytesIO()
-        curlObj = pycurl.Curl()
-        curlObj.setopt(pycurl.POST, 1)
-        curlObj.setopt(pycurl.CONNECTTIMEOUT, 30)
-        curlObj.setopt(pycurl.TIMEOUT, 30)
-        curlObj.setopt(pycurl.HEADER, 0)
-        curlObj.setopt(pycurl.SSL_VERIFYPEER, 0)
-        curlObj.setopt(pycurl.WRITEFUNCTION, responseIO.write)
-
-        curlObj.setopt(
-            pycurl.URL, "https://cxpay.transactiongateway.com/api/transact.php")
-
-        curlObj.setopt(pycurl.POSTFIELDS, query)
-
-        curlObj.perform()
-
-        data = responseIO.getvalue()
-        temp = urlparse.parse_qs(data)
-        for key, value in temp.items():
-            self.responses[key.decode("utf-8")] = value[0]
-        return self.responses
+        elif response_dict['response'] and response_dict['response']['result'] != "100":
+            return {
+                'response': 3,
+                'responsetext': response.text
+            }
+        else:
+            return {
+                'response': 3,
+                'responsetext': response.text
+            }
+        
+    def doPost(self, transaction_id, form_url, ccnumber, ccexp, cvv=''):
+        card_dict = {
+            "billing-cc-number": ccnumber,
+            "billing-cc-exp" : ccexp ,
+            "cvv": cvv
+        }
+        response = requests.post(
+            form_url,
+            headers={"Content-Type": "text/plain"},
+            data=card_dict
+        )
+        response_dict = xmltodict.parse(response.text)
+        if response_dict['result'] == '1':
+            return {
+                'response': response_dict['result'],
+                'transactionid': transaction_id,              
+            }
+        return {
+                'response': 3,
+                'responsetext': 'Not Found!'            
+            }
 
 
     # Transaction management
-    def auth_and_capture(self, token, amount, reference, tx):
+    def auth_and_capture(self, token, payment_id, amount, reference, tx):
         """Authorize and capture a payment for the given amount.
 
         Authorize and immediately capture a payment for the given payment.token
@@ -178,9 +194,9 @@ class CXPay():
         """
         # response = self._authorize_request(values)
         self.setLogin(token.acquirer_id.cxpay_client_key)
-        response = self.doSale(str(amount), str(token.card_number), str(token.exp_date), str(token.cvv_no))
+        response = self.doSale(str(amount), payment_id, str(token.card_number), str(token.exp_date), str(token.cvv_no))
         _logger.info("_authorize_request: Received response:\n%s", response.get('response'))
-        if response and response.get('response') and str(response.get('response').decode('ASCII') ) != '1':
+        if response and response.get('response') and str(response.get('response')) != '1':
             return {
                 'x_response_code': response.get('response'),
                 'x_response_reason_text': response.get('responsetext')
@@ -190,9 +206,9 @@ class CXPay():
             'x_trans_id': response.get('transactionid'),
             'x_type': 'auth_capture'                
         }
-        errors = response.get('transactionResponse', {}).get('errors')
-        if errors:
-            result['x_response_reason_text'] = '\n'.join(
-                [e.get('errorText') for e in errors])
+        # errors = response.get('transactionResponse', {}).get('errors')
+        # if errors:
+        #     result['x_response_reason_text'] = '\n'.join(
+        #         [e.get('errorText') for e in errors])
         return result
 
