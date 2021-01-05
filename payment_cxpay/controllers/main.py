@@ -30,6 +30,10 @@ class AuthorizeController(http.Controller):
             'return_url': urls.url_join(base_url, "/payment/process")
         })
 
+    @http.route(['/payment/cx_pay/approve'], type='http', auth='public', csrf=False)
+    def cx_pay_paymment_approve(self, tranjaction_id=False, **kwargs):
+        return '<result>1</result>'
+    
     @http.route(['/payment/cx_pay/s2s/create_json_3ds'], type='json', auth='public', csrf=False)
     def authorize_s2s_create_json_3ds(self, verify_validity=False, **kwargs):
         token = False

@@ -21,10 +21,7 @@ class PaymentAcquirerAuthorize(models.Model):
     _inherit = 'payment.acquirer'
 
     provider = fields.Selection(selection_add=[('cxpay', 'CX-Pay')])
-    cxpay_login = fields.Char(string='API Login Id', required_if_provider='authorize', groups='base.group_user')
-    cxpay_transaction_key = fields.Char(string='API Transaction Key', required_if_provider='authorize', groups='base.group_user')
-    cxpay_signature_key = fields.Char(string='API Signature Key', required_if_provider='authorize', groups='base.group_user')
-    cxpay_client_key = fields.Char(string='API Client Key', groups='base.group_user')
+    cxpay_client_key = fields.Char(string='API Client Key', groups='base.group_user', required_if_provider='cxpay')
     # cxpay_client_key = fields.Char(string='API Client Key', groups='base.group_user')
 
     @api.onchange('provider', 'check_validity')
@@ -205,7 +202,7 @@ class TxAuthorize(models.Model):
 
     def _cxpay_form_validate(self, data):
         if self.state == 'done':
-            _logger.warning('Authorize: trying to validate an already validated tx (ref %s)' % self.reference)
+            _loggerx_response_code.warning('Authorize: trying to validate an already validated tx (ref %s)' % self.reference)
             return True
         status_code = int(data.get('x_response_code', '0'))
         if status_code == self._authorize_valid_tx_status:
@@ -250,7 +247,7 @@ class TxAuthorize(models.Model):
         self.ensure_one()
         transaction = AuthorizeAPI(self.acquirer_id)
         if not self.acquirer_id.capture_manually:
-            res = transaction.auth_and_capture(self.payment_token_id, round(self.amount, self.currency_id.decimal_places), self.reference, self)
+            res = transaction.auth_and_capture(self.payment_token_id, self, round(self.amount, self.currency_id.decimal_places), self.reference, self)
         else:
             res = transaction.authorize(self.payment_token_id, round(self.amount, self.currency_id.decimal_places), self.reference)
         return self._cxpay_s2s_validate_tree(res)
@@ -333,10 +330,8 @@ class PaymentToken(models.Model):
             cc_expiry = ''
             if values.get('cc_expiry'):
                 for rec in list(values.get('cc_expiry')):
-                    print("??????????????????????/////////", rec, rec.isdigit())
                     if rec.isdigit():
                         cc_expiry += str(rec)
-                        print("??????????????????????/////////cc_expiry", rec, cc_expiry)
             return {
                 'name': 'XXXXXXXXXXXX%s - %s' % (values['cc_number'][-4:], values['cc_holder_name']),
                 'acquirer_ref': 'test',
