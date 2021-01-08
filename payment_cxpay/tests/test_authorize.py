@@ -21,9 +21,7 @@ class AuthorizeCommon(PaymentAcquirerCommon):
         # get the authorize account
         self.authorize = self.env.ref('payment.payment_acquirer_authorize')
         self.authorize.write({
-            'cxpay_login': 'dummy',
-            'cxpay_transaction_key': 'dummy',
-            'cxpay_signature_key': '00000000',
+            'cxpay_client_key': 'test'
             'state': 'test',
         })
         # Be sure to be in 'capture' mode

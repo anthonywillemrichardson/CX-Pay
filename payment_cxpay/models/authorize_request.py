@@ -43,8 +43,8 @@ class CXPay():
         else:
             self.url = 'https://api.authorize.net/xml/v1/request.api'
         self.state = acquirer.state
-        self.name = acquirer.cxpay_login
-        self.transaction_key = acquirer.cxpay_transaction_key
+        self.name = acquirer.cxpay_client_key
+        self.transaction_key = acquirer.cxpay_client_key
         self.login = dict()
         self.order = dict()
         self.billing = dict()
