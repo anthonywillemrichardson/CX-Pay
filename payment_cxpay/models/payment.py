@@ -87,7 +87,7 @@ class PaymentAcquirerAuthorize(models.Model):
         base_url = self.get_base_url()
         authorize_tx_values = dict(values)
         temp_authorize_tx_values = {
-            'x_login': self.cxpay_login,
+            'x_login': self.cxpay_client_key,
             'x_amount': float_repr(values['amount'], values['currency'].decimal_places if values['currency'] else 2),
             'x_show_form': 'PAYMENT_FORM',
             'x_type': 'AUTH_CAPTURE' if not self.capture_manually else 'AUTH_ONLY',
